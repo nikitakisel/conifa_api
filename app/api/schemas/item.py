@@ -85,6 +85,16 @@ class MatchInfo(BaseModel):
     guest_team_score: int
 
 
+class ScheduleMatch(BaseModel):
+    home_team_name: str
+    guest_team_name: str
+
+
+class ScheduleTour(BaseModel):
+    tour_number: int
+    matches: List[ScheduleMatch]
+
+
 # Full info models
 class TournamentFullInfo(BaseModel):
     id: int
