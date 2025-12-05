@@ -9,6 +9,7 @@ class FootballTeamCreate(BaseModel):
     player_id: int
     team_name: str = Field(..., min_length=2)
     team_code: str = Field(..., min_length=2, max_length=4)
+    team_logo: str
     country: str
     city: str
     achievements: str
@@ -33,13 +34,13 @@ class FootballTeamToTournamentCreate(BaseModel):
 
 
 class MatchCreate(BaseModel):
-    player_id: int
     tournament_id: int
+    tour_number: int
     date: datetime
     home_team_id: int
     guest_team_id: int
-    home_team_score: int
-    guest_team_score: int
+    home_team_score: int | None = None
+    guest_team_score: int | None = None
 
 
 # Info models
@@ -48,6 +49,7 @@ class FootballTeamInfo(BaseModel):
     player_id: int
     team_name: str
     team_code: str
+    team_logo: str
     country: str
     city: str
     achievements: str
@@ -76,23 +78,13 @@ class FootballTeamToTournamentInfo(BaseModel):
 
 class MatchInfo(BaseModel):
     id: int
-    player_id: int
     tournament_id: int
+    tour_number: int
     date: datetime
     home_team_id: int
     guest_team_id: int
-    home_team_score: int
-    guest_team_score: int
-
-
-class ScheduleMatch(BaseModel):
-    home_team_name: str
-    guest_team_name: str
-
-
-class ScheduleTour(BaseModel):
-    tour_number: int
-    matches: List[ScheduleMatch]
+    home_team_score: int | None = None
+    guest_team_score: int | None = None
 
 
 # Full info models
@@ -107,19 +99,33 @@ class TournamentFullInfo(BaseModel):
 
 class MatchFullInfo(BaseModel):
     id: int
-    player_id: int
-    tournament_name: str
+    tournament_id: int
+    tour_number: int
     date: datetime
-    home_team_name: str
-    guest_team_name: str
-    home_team_score: int
-    guest_team_score: int
+    home_team_info: FootballTeamInfo
+    guest_team_info: FootballTeamInfo
+    home_team_score: int | None = None
+    guest_team_score: int | None = None
+
+
+class FootballTeamTournamentStatistics(BaseModel):
+    team_name: str
+    team_logo: str | None = None
+    matches_played: int
+    score: int
+    wins: int
+    draws: int
+    losses: int
+    goals_scored: int
+    goals_conceded: int
+    goal_difference: int
 
 
 # Update models
 class FootballTeamUpdate(BaseModel):
     team_name: str | None = None
     team_code: str | None = None
+    team_logo: str | None = None
     country: str | None = None
     city: str | None = None
     achievements: str | None = None
@@ -137,13 +143,7 @@ class TournamentTypeUpdate(BaseModel):
     description: str | None = None
 
 
-class FootballTeamToTournamentUpdate(BaseModel):
-    football_team_id: int | None = None
-    tournament_id: int | None = None
-
-
 class MatchUpdate(BaseModel):
-    tournament_id: int | None = None
     date: datetime | None = None
     home_team_score: int | None = None
     guest_team_score: int | None = None

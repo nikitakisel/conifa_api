@@ -31,7 +31,7 @@ class Player(Base):
     user = relationship("User", back_populates="player")
     football_teams = relationship("FootballTeam", back_populates="player", cascade="all, delete-orphan")
     tournaments = relationship("Tournament", back_populates="player", cascade="all, delete-orphan")
-    matches = relationship("Match", back_populates="player", cascade="all, delete-orphan")
+    # matches = relationship("Match", back_populates="player", cascade="all, delete-orphan")
 
 
 class FootballTeam(Base):
@@ -41,6 +41,7 @@ class FootballTeam(Base):
     player_id = Column(Integer, ForeignKey("players.id", ondelete="CASCADE"), index=True)
     team_name = Column(String)
     team_code = Column(String)
+    team_logo = Column(Text)
     country = Column(String)
     city = Column(String)
     achievements = Column(Text)
@@ -111,15 +112,16 @@ class Match(Base):
     __tablename__ = "matches"
 
     id = Column(Integer, primary_key=True, index=True)
-    player_id = Column(Integer, ForeignKey("players.id", ondelete="CASCADE"), index=True)
+    # player_id = Column(Integer, ForeignKey("players.id", ondelete="CASCADE"), index=True)
     tournament_id = Column(Integer, ForeignKey("tournaments.id", ondelete="CASCADE"), index=True)
-    date = Column(DateTime)
+    tour_number = Column(Integer)
+    date = Column(DateTime, default=datetime.utcnow)
     home_team_id = Column(Integer, ForeignKey("football_teams.id", ondelete="CASCADE"), index=True)
     guest_team_id = Column(Integer, ForeignKey("football_teams.id", ondelete="CASCADE"), index=True)
     home_team_score = Column(Integer)
     guest_team_score = Column(Integer)
 
-    player = relationship("Player", back_populates="matches")
+    # player = relationship("Player", back_populates="matches")
     tournament = relationship("Tournament", back_populates="matches")
 
     home_team = relationship(

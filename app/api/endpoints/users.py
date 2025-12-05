@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Annotated
+from typing import Annotated, List
 
 from fastapi import FastAPI, Depends, HTTPException, status, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,7 +7,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, DateTime, select, ForeignKey
 from sqlalchemy.orm import sessionmaker, declarative_base, Session, relationship, backref
 
-from app.api.schemas.user import UserResponse, UserCreate
+from app.api.schemas.user import UserResponse, UserCreate, PlayerInfo, PlayerUpdate
 from app.config import DATABASE_URL, SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, engine, SessionLocal
 from app.api.models.models import User, Player
 from app.api.schemas.user import Token
@@ -98,3 +98,43 @@ def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depen
 @router.get("/users/me", response_model=UserResponse, tags=["player panel"])
 async def read_users_me(current_user: User = Depends(get_current_active_user)):
     return current_user
+
+
+@router.get("/players/all", response_model=List[PlayerInfo], tags=["admin panel"])
+def read_all_players(db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+    db_players = db.execute(select(Player)).scalars().all()
+    return db_players
+
+
+@router.get("/players/{player_id}", response_model=PlayerInfo, tags=["player panel"])
+def read_player(player_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+    player = db.execute(select(Player).where(Player.id == player_id)).scalars().first()
+    if player is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
+    return player
+
+
+@router.put("/players/{player_id}", response_model=PlayerInfo, tags=["player panel"])
+def update_player(player_id: int, player_update: PlayerUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+    """
+    Updates a resident's information.
+    """
+    db_player = db.execute(select(Player).where(Player.id == player_id)).scalars().first()
+    if db_player is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Resident not found")
+
+    # Update fields if they are provided in the request
+    if player_update.surname is not None:
+        db_player.surname = player_update.surname
+    if player_update.name is not None:
+        db_player.name = player_update.name
+    if player_update.birthdate is not None:
+        db_player.birthdate = player_update.birthdate
+    if player_update.email is not None:
+        db_player.email = player_update.email
+    if player_update.phone is not None:
+        db_player.phone = player_update.phone
+
+    db.commit()
+    db.refresh(db_player)
+    return db_player

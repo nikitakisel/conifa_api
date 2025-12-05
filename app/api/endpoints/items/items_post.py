@@ -1,13 +1,14 @@
 from datetime import datetime, timedelta
-from typing import Annotated
+from typing import Annotated, List
 
 from fastapi import FastAPI, Depends, HTTPException, status, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, DateTime, select, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, DateTime, select, ForeignKey, delete
 from sqlalchemy.orm import sessionmaker, declarative_base, Session, relationship, backref
 
 from app.api.schemas.user import UserResponse, UserCreate
+from app.api.utils.schedule_functions import generate_schedule
 from app.config import DATABASE_URL, SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, engine, SessionLocal
 from app.api.models.models import User, Player, FootballTeam, TournamentType, Tournament, Match, \
     FootballTeamToTournament
@@ -53,7 +54,7 @@ def create_tournament(tournament: TournamentCreate, db: Session = Depends(get_db
     return db_tournament
 
 
-@router.post("/football_teams_to_tournaments/", response_model=FootballTeamToTournamentInfo, status_code=status.HTTP_201_CREATED, tags=["football teams endpoints"])
+@router.post("/football_teams_to_tournaments/", response_model=FootballTeamToTournamentInfo, status_code=status.HTTP_201_CREATED, tags=["football team to tournament endpoints"])
 def add_football_team_to_tournament(football_team_to_tournament: FootballTeamToTournamentCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     db_football_team_to_tournament = FootballTeamToTournament(**football_team_to_tournament.dict())
     db.add(db_football_team_to_tournament)
@@ -62,10 +63,42 @@ def add_football_team_to_tournament(football_team_to_tournament: FootballTeamToT
     return db_football_team_to_tournament
 
 
-@router.post("/matches/", response_model=MatchInfo, status_code=status.HTTP_201_CREATED, tags=["matches endpoints"])
-def create_match(match: MatchCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
-    db_match = Match(**match.dict())
-    db.add(db_match)
+# @router.post("/matches/", response_model=MatchInfo, status_code=status.HTTP_201_CREATED, tags=["matches endpoints"])
+# def create_match(match: MatchCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+#     db_match = Match(**match.dict())
+#     db.add(db_match)
+#     db.commit()
+#     db.refresh(db_match)
+#     return db_match
+
+
+@router.post("/matches/schedule/{tournament_id}", response_model=List[MatchInfo], status_code=status.HTTP_201_CREATED, tags=["matches endpoints"])
+def create_tournament_schedule(tournament_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+    db_football_teams = db.execute(
+        select(FootballTeamToTournament)
+        .where(FootballTeamToTournament.tournament_id == tournament_id)
+    ).scalars().all()
+
+    if not db_football_teams:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Schedule not found for this tournament or tournament is not exist")
+
+    football_teams_list = [item.football_team_id for item in db_football_teams]
+    schedule = generate_schedule(football_teams_list)
+
+    db.execute(delete(Match).where(Match.tournament_id == tournament_id))
+    matches = []
+
+    for i in range(len(schedule)):
+        for match in schedule[i]:
+            db_match = Match(
+                tournament_id=tournament_id,
+                tour_number=i+1,
+                home_team_id=match[0],
+                guest_team_id=match[1]
+            )
+            db.add(db_match)
+            matches.append(db_match)
+
     db.commit()
-    db.refresh(db_match)
-    return db_match
+    return matches
