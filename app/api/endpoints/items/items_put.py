@@ -2,13 +2,9 @@ from datetime import datetime, timedelta
 from typing import Annotated, List
 
 from fastapi import FastAPI, Depends, HTTPException, status, APIRouter
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, DateTime, select, ForeignKey
 from sqlalchemy.orm import sessionmaker, declarative_base, Session, relationship, backref
 
-from app.api.schemas.user import UserResponse, UserCreate, PlayerInfo, PlayerUpdate
-from app.config import DATABASE_URL, SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, engine, SessionLocal
 from app.api.models.models import User, Player, FootballTeam, TournamentType, Tournament, Match, \
     FootballTeamToTournament
 from app.api.schemas.item import FootballTeamCreate, TournamentTypeCreate, TournamentCreate, \
