@@ -49,7 +49,7 @@ class FootballTeamInfo(BaseModel):
     player_id: int
     team_name: str
     team_code: str
-    team_logo: str
+    team_logo: str | None = None
     country: str
     city: str
     achievements: str

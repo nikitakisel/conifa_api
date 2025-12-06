@@ -2,21 +2,18 @@ from datetime import datetime, timedelta
 from typing import Annotated, List
 
 from fastapi import FastAPI, Depends, HTTPException, status, APIRouter
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, DateTime, select, ForeignKey, text
 from sqlalchemy.orm import sessionmaker, declarative_base, Session, relationship, backref
 
+from app.api.endpoints.users import get_current_active_user
 from app.api.repositories.tournament_queries import TOURNAMENT_STANDINGS_SQL
-from app.api.schemas.user import UserResponse, UserCreate
-from app.config import DATABASE_URL, SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, engine, SessionLocal
 from app.api.models.models import User, Player, FootballTeam, TournamentType, Tournament, Match, \
     FootballTeamToTournament
 from app.api.schemas.item import FootballTeamCreate, TournamentTypeCreate, TournamentCreate, \
     FootballTeamToTournamentCreate, MatchCreate, FootballTeamInfo, TournamentTypeInfo, TournamentInfo, \
     FootballTeamToTournamentInfo, MatchInfo, FootballTeamTournamentStatistics, MatchFullInfo, TournamentFullInfo
 
-from app.database import get_db, get_current_active_user
+from app.database import get_db
 
 router = APIRouter()
 
@@ -66,7 +63,7 @@ def parse_full_matches_info(db_matches, db):
     return matches
 
 
-@router.get("/tournament/schedule/all/{tournament_id}", response_model=List[MatchFullInfo], tags=["matches endpoints"])
+@router.get("/tournament/schedule/all/{tournament_id}", response_model=List[MatchFullInfo], tags=["tournament statistics"])
 def get_tournament_schedule(tournament_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     db_matches = db.execute(
         select(Match)
@@ -76,7 +73,7 @@ def get_tournament_schedule(tournament_id: int, db: Session = Depends(get_db), c
     return parse_full_matches_info(db_matches, db)
 
 
-@router.get("/tournament/schedule/tour/{tournament_id}/{tour_number}", response_model=List[MatchFullInfo], tags=["matches endpoints"])
+@router.get("/tournament/schedule/tour/{tournament_id}/{tour_number}", response_model=List[MatchFullInfo], tags=["tournament statistics"])
 def get_tournament_schedule(tournament_id: int, tour_number: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     db_matches = db.execute(
         select(Match)
@@ -86,7 +83,7 @@ def get_tournament_schedule(tournament_id: int, tour_number: int, db: Session = 
     return parse_full_matches_info(db_matches, db)
 
 
-@router.get("/tournament/statistics/{tournament_id}", response_model=List[FootballTeamTournamentStatistics], tags=["matches endpoints"])
+@router.get("/tournament/statistics/{tournament_id}", response_model=List[FootballTeamTournamentStatistics], tags=["tournament statistics"])
 def get_tournament_statistics(tournament_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     teams_results = db.execute(text(TOURNAMENT_STANDINGS_SQL(tournament_id))).fetchall()
     return teams_results
