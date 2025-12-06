@@ -73,7 +73,7 @@ def create_tournament_schedule(tournament_id: int, db: Session = Depends(get_db)
 
     if not db_football_teams:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="Schedule not found for this tournament or tournament is not exist")
+                            detail="Football teams not found for this tournament or tournament is not exist")
 
     football_teams_list = [item.football_team_id for item in db_football_teams]
     schedule = generate_schedule(football_teams_list)

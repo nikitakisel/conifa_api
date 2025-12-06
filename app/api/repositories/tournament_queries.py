@@ -23,9 +23,9 @@ def TOURNAMENT_STANDINGS_SQL(tournament_id):
                 home_team_score IS NOT NULL
                 AND guest_team_score IS NOT NULL
                 AND tournament_id = {tournament_id}
-    
+        
             UNION ALL
-    
+        
             SELECT
                 guest_team_id AS team_id,
                 CASE
@@ -48,25 +48,38 @@ def TOURNAMENT_STANDINGS_SQL(tournament_id):
                 home_team_score IS NOT NULL
                 AND guest_team_score IS NOT NULL
                 AND tournament_id = {tournament_id}
+        ),
+        tournament_teams AS (
+            SELECT
+                FT.id AS team_id,
+                FT.team_name
+            FROM
+                football_teams AS FT
+            JOIN
+                football_teams_to_tournaments AS FTT
+                ON FT.id = FTT.football_team_id
+            WHERE
+                FTT.tournament_id = {tournament_id}
         )
         SELECT
-            FT.team_name,
-            COUNT(*) AS matches_played,
-            (3 * SUM(TR.wins) + SUM(TR.draws)) AS score,
-            SUM(TR.wins) AS wins,
-            SUM(TR.draws) AS draws,
-            SUM(TR.losses) AS losses,
-            SUM(TR.goals_scored_in_match) AS goals_scored,
-            SUM(TR.goals_conceded_in_match) AS goals_conceded,
-            SUM(TR.goals_scored_in_match) - SUM(goals_conceded_in_match) AS goal_difference
+            TT.team_name,
+            COUNT(TR.team_id) AS matches_played,
+            (3 * COALESCE(SUM(TR.wins), 0) + COALESCE(SUM(TR.draws), 0)) AS score,
+            COALESCE(SUM(TR.wins), 0) AS wins,
+            COALESCE(SUM(TR.draws), 0) AS draws,
+            COALESCE(SUM(TR.losses), 0) AS losses,
+            COALESCE(SUM(TR.goals_scored_in_match), 0) AS goals_scored,
+            COALESCE(SUM(TR.goals_conceded_in_match), 0) AS goals_conceded,
+            COALESCE(SUM(TR.goals_scored_in_match), 0) - COALESCE(SUM(TR.goals_conceded_in_match), 0) AS goal_difference
         FROM
-            team_results AS TR
-        JOIN
-            football_teams AS FT ON TR.team_id = FT.id
+            tournament_teams AS TT
+        LEFT JOIN
+            team_results AS TR ON TR.team_id = TT.team_id
         GROUP BY
-            FT.team_name
+            TT.team_name, TT.team_id
         ORDER BY
             score DESC,
             goal_difference DESC,
-            goals_scored DESC;
+            goals_scored DESC,
+            TT.team_name;
     """
