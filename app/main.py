@@ -4,19 +4,11 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.api.models.models import Base
+from app.database import Base
 from app.api.endpoints import users
 from app.api.endpoints.items import items_get, items_post, items_put, items_delete
 
-import bcrypt
-import jwt
-import random
-import uvicorn
-
-from app.config import engine, origins
-
-# Create the database tables
-Base.metadata.create_all(engine)
+from app.config import origins
 
 # FastAPI App
 app = FastAPI()

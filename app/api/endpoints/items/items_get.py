@@ -5,6 +5,7 @@ from fastapi import FastAPI, Depends, HTTPException, status, APIRouter
 from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, DateTime, select, ForeignKey, text
 from sqlalchemy.orm import sessionmaker, declarative_base, Session, relationship, backref
 
+from app.api.endpoints.users import get_current_active_user
 from app.api.repositories.tournament_queries import TOURNAMENT_STANDINGS_SQL
 from app.api.models.models import User, Player, FootballTeam, TournamentType, Tournament, Match, \
     FootballTeamToTournament
@@ -12,7 +13,7 @@ from app.api.schemas.item import FootballTeamCreate, TournamentTypeCreate, Tourn
     FootballTeamToTournamentCreate, MatchCreate, FootballTeamInfo, TournamentTypeInfo, TournamentInfo, \
     FootballTeamToTournamentInfo, MatchInfo, FootballTeamTournamentStatistics, MatchFullInfo, TournamentFullInfo
 
-from app.database import get_db, get_current_active_user
+from app.database import get_db
 
 router = APIRouter()
 
